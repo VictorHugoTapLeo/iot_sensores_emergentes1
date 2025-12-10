@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# Datos
+data/*.csv
+*.db
+
+# ML Models
+src/ml/models/*.pkl
+src/ml/models/*.joblib
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+
+# Docker
+.docker/

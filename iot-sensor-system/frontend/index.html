@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema IoT GAMC - Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <!-- Pantalla de Login -->
+    <div id="loginScreen" class="screen active">
+        <div class="login-container">
+            <div class="login-box">
+                <h1>Sistema IoT GAMC</h1>
+                <p class="subtitle">Monitoreo de Sensores en Tiempo Real</p>
+                
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Usuario</label>
+                        <input type="text" id="username" required autocomplete="username">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <input type="password" id="password" required autocomplete="current-password">
+                    </div>
+                    
+                    <div id="loginError" class="error-message"></div>
+                    
+                    <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+                </form>
+                
+                <div class="login-info">
+                    <p><strong>Usuarios de prueba:</strong></p>
+                    <ul>
+                        <li>alcalde / alcalde123</li>
+                        <li>director / director123</li>
+                        <li>admin / admin123</li>
+                        <li>usuario / usuario123</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Principal -->
+    <div id="dashboardScreen" class="screen">
+        <!-- Navegación -->
+        <nav class="navbar">
+            <div class="nav-content">
+                <div class="nav-brand">
+                    <h1>🌐 Sistema IoT GAMC</h1>
+                </div>
+                <div class="nav-user">
+                    <span id="userName">Usuario</span>
+                    <span id="userRole" class="badge"></span>
+                    <button id="logoutBtn" class="btn btn-secondary">Cerrar Sesión</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Contenido Principal -->
+        <div class="main-content">
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="overview">📊 Resumen</button>
+                <button class="tab-btn" data-tab="aire">💨 Calidad de Aire</button>
+                <button class="tab-btn" data-tab="sonido">🔊 Nivel de Sonido</button>
+                <button class="tab-btn" data-tab="soterrado">💧 Nivel de Líquido</button>
+                <button class="tab-btn" data-tab="predictions">🔮 Predicciones ML</button>
+                <button class="tab-btn admin-only" data-tab="admin">⚙️ Administración</button>
+            </div>
+
+            <!-- Tab: Resumen -->
+            <div id="overview" class="tab-content active">
+                <h2>Resumen del Sistema</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">💨</div>
+                        <div class="stat-info">
+                            <p class="stat-label">Sensores de Aire</p>
+                            <p class="stat-value" id="aireCount">-</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">🔊</div>
+                        <div class="stat-info">
+                            <p class="stat-label">Sensores de Sonido</p>
+                            <p class="stat-value" id="sonidoCount">-</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">💧</div>
+                        <div class="stat-info">
+                            <p class="stat-label">Sensores Soterrados</p>
+                            <p class="stat-value" id="soterradoCount">-</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">📡</div>
+                        <div class="stat-info">
+                            <p class="stat-label">Total Registros</p>
+                            <p class="stat-value" id="totalCount">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3>Últimas Lecturas - CO2</h3>
+                        <canvas id="overviewCO2Chart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Últimas Lecturas - Sonido</h3>
+                        <canvas id="overviewSonidoChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Aire -->
+            <div id="aire" class="tab-content">
+                <h2>📡 Sensores de Calidad de Aire</h2>
+                
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="loadSensorData('aire')">🔄 Actualizar</button>
+                    <select id="aireLimit" class="select">
+                        <option value="50">50 registros</option>
+                        <option value="100" selected>100 registros</option>
+                        <option value="200">200 registros</option>
+                    </select>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3>CO2 (ppm)</h3>
+                        <canvas id="aireCO2Chart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Temperatura (°C)</h3>
+                        <canvas id="aireTempChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Humedad (%)</h3>
+                        <canvas id="aireHumChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Presión (hPa)</h3>
+                        <canvas id="airePresChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Sonido -->
+            <div id="sonido" class="tab-content">
+                <h2>🔊 Sensores de Nivel de Sonido</h2>
+                
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="loadSensorData('sonido')">🔄 Actualizar</button>
+                    <select id="sonidoLimit" class="select">
+                        <option value="50">50 registros</option>
+                        <option value="100" selected>100 registros</option>
+                        <option value="200">200 registros</option>
+                    </select>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3>LAeq (dB)</h3>
+                        <canvas id="sonidoLAeqChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>LAI (dB)</h3>
+                        <canvas id="sonidoLAIChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>LAImax (dB)</h3>
+                        <canvas id="sonidoLAImaxChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Soterrado -->
+            <div id="soterrado" class="tab-content">
+                <h2>💧 Sensores de Nivel de Líquido</h2>
+                
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="loadSensorData('soterrado')">🔄 Actualizar</button>
+                    <select id="soterradoLimit" class="select">
+                        <option value="50">50 registros</option>
+                        <option value="100" selected>100 registros</option>
+                        <option value="200">200 registros</option>
+                    </select>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-container large">
+                        <h3>Distancia (cm)</h3>
+                        <canvas id="soterradoDistChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Predicciones ML -->
+            <div id="predictions" class="tab-content">
+                <h2>🔮 Predicciones de Machine Learning</h2>
+                
+                <div class="controls">
+                    <select id="predSensorType" class="select">
+                        <option value="aire">Calidad de Aire</option>
+                        <option value="sonido">Nivel de Sonido</option>
+                        <option value="soterrado">Nivel de Líquido</option>
+                    </select>
+                    <select id="predDays" class="select">
+                        <option value="7">7 días</option>
+                        <option value="30">30 días</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="generatePredictions()">🔮 Generar Predicciones</button>
+                </div>
+
+                <div id="predictionResults" class="prediction-results"></div>
+            </div>
+
+            <!-- Tab: Admin -->
+            <div id="admin" class="tab-content admin-only">
+                <h2>⚙️ Administración del Sistema</h2>
+                
+                <div class="admin-section">
+                    <h3>Entrenamiento de Modelos ML</h3>
+                    <p>Entrenar nuevos modelos con los datos más recientes</p>
+                    
+                    <div class="controls">
+                        <select id="trainSensorType" class="select">
+                            <option value="all">Todos los sensores</option>
+                            <option value="aire">Calidad de Aire</option>
+                            <option value="sonido">Nivel de Sonido</option>
+                            <option value="soterrado">Nivel de Líquido</option>
+                        </select>
+                        <input type="number" id="trainDays" class="input" value="60" min="30" max="365" placeholder="Días de datos">
+                        <button class="btn btn-warning" onclick="trainModels()">🎓 Entrenar Modelos</button>
+                    </div>
+                    
+                    <div id="trainingResults"></div>
+                </div>
+
+                <div class="admin-section">
+                    <h3>Logs del Sistema</h3>
+                    <button class="btn btn-secondary" onclick="loadLogs()">📋 Ver Logs</button>
+                    <div id="systemLogs"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/predictions.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
